@@ -25,7 +25,7 @@ $$
 5. ω 近心点幅角 Argument of periapsis
 6. υ 真近点角 True anomaly
 
-![非高等数学推导开普勒方程](https://picx1.zhimg.com/8e9593179404912365c756d485c9988b_720w.jpg?source=172ae18b)
+![非高等数学推导开普勒方程](D:\Source\repos\RestrictedGravitySimulation\image\8e9593179404912365c756d485c9988b_720w.jpg)
 
 ### 计算中使用的角
 
@@ -40,7 +40,7 @@ M=n*\tau
 $$
 其中n是平均角速度、τ是固有时间
 
-![真近点角](https://bkimg.cdn.bcebos.com/pic/d0c8a786c9177f3e1961f9eb7ecf3bc79e3d56fa?x-bce-process=image/resize,m_lfit,w_536,limit_1)
+![真近点角](D:\Source\repos\RestrictedGravitySimulation\image\resize,m_lfit,w_536,limit_1)
 
 如下定义轨道参数
 
