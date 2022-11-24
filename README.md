@@ -129,9 +129,9 @@ $$
 E=M+e \sin M+e^{2} \sin M \cos M+\frac{1}{2} e^{3} \sin M\left(3 \cos ^{2} M-1\right)
 $$
 
-![image-20221108185403502](C:\Users\Estelle\AppData\Roaming\Typora\typora-user-images\image-20221108185403502.png)
+![image-20221108185403502](D:\Source\repos\RestrictedGravitySimulation\image\image-20221108185403502.png)
 
-![image-20221108185443159](C:\Users\Estelle\AppData\Roaming\Typora\typora-user-images\image-20221108185443159.png)
+![image-20221108185443159](D:\Source\repos\RestrictedGravitySimulation\image\image-20221108185443159.png)
 
 初始值的差值
 
@@ -184,11 +184,11 @@ $$
 
 但是很遗憾的是迭代的初值方法对于双曲轨道并不适用，其会导致数值发散，所以，这里采用了比较简陋的方法，采用$\arcsin(M)$作为迭代初值
 
-![image-20221108195358630](C:\Users\Estelle\AppData\Roaming\Typora\typora-user-images\image-20221108195358630.png)
+![image-20221108195358630](D:\Source\repos\RestrictedGravitySimulation\image\image-20221108195358630.png)
 
 基准值
 
-![image-20221108195422746](C:\Users\Estelle\AppData\Roaming\Typora\typora-user-images\image-20221108195422746.png)
+![image-20221108195422746](D:\Source\repos\RestrictedGravitySimulation\image\image-20221108195422746.png)
 
 初始值的差值
 
@@ -261,7 +261,7 @@ $$
 其中旋转的计算方法
 
 ```python
-ti.math.rotation3d(0.0, 0.0, W)@ti.math.rotation3d(i, 0.0, 0.0)@ti.math.rotation3d(0.0, 0.0, w)
+R = ti.math.rotation3d(0.0, 0.0, W)@ti.math.rotation3d(i, 0.0, 0.0)@ti.math.rotation3d(0.0, 0.0, w)
 ```
 
 
