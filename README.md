@@ -25,7 +25,7 @@ $$
 5. ω 近心点幅角 Argument of periapsis
 6. υ 真近点角 True anomaly
 
-![OrbitParameters](image\8e9593179404912365c756d485c9988b_720w.jpg)
+![OrbitParameters](https://github.com/StellarWarp/RestrictedGravitySimulation/tree/main/image/8e9593179404912365c756d485c9988b_720w.jpg)
 
 ### 计算中使用的角
 
@@ -40,7 +40,7 @@ M=n*\tau
 $$
 其中n是平均角速度、τ是固有时间
 
-![真近点角](image\resize,m_lfit,w_536,limit_1)
+![真近点角](https://github.com/StellarWarp/RestrictedGravitySimulation/tree/main/image\resize,m_lfit,w_536,limit_1)
 
 如下定义轨道参数
 
@@ -129,9 +129,9 @@ $$
 E=M+e \sin M+e^{2} \sin M \cos M+\frac{1}{2} e^{3} \sin M\left(3 \cos ^{2} M-1\right)
 $$
 
-![image-20221108185403502](image\image-20221108185403502.png)
+![image-20221108185403502](https://github.com/StellarWarp/RestrictedGravitySimulation/tree/main/image\image-20221108185403502.png)
 
-![image-20221108185443159](image\image-20221108185443159.png)
+![image-20221108185443159](https://github.com/StellarWarp/RestrictedGravitySimulation/tree/main/image\image-20221108185443159.png)
 
 初始值的差值
 
@@ -184,11 +184,11 @@ $$
 
 但是很遗憾的是迭代的初值方法对于双曲轨道并不适用，其会导致数值发散，所以，这里采用了比较简陋的方法，采用$\arcsin(M)$作为迭代初值
 
-![image-20221108195358630](image\image-20221108195358630.png)
+![image-20221108195358630](https://github.com/StellarWarp/RestrictedGravitySimulation/tree/main/image\image-20221108195358630.png)
 
 基准值
 
-![image-20221108195422746](image\image-20221108195422746.png)
+![image-20221108195422746](https://github.com/StellarWarp/RestrictedGravitySimulation/tree/main/image\image-20221108195422746.png)
 
 初始值的差值
 
