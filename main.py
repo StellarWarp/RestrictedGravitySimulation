@@ -2,7 +2,7 @@ import taichi as ti
 import sys
 import numpy as np
 
-ti.init(arch=ti.vulkan)
+ti.init(arch=ti.gpu)
 vec3 = ti.math.vec3
 
 G: ti.f32 = 1  # Gravitational constant
@@ -177,7 +177,7 @@ def vector_to_params(X: vec3, V: vec3, cM: ti.f32, time: ti.f32):
     mu = cM * G
     Ws = V.dot(V) / 2 - mu / X_magnitude
     a = -mu / (2 * Ws)
-    L = ti.Vector.cross(X, V)  # 角动量 右手系
+    L = ti.Vector.cross(X, V)
     L_magnitude = L.norm()
     L2 = L_magnitude * L_magnitude
     p = L2 / mu
@@ -253,7 +253,7 @@ def vector_to_params(X: vec3, V: vec3, cM: ti.f32, time: ti.f32):
         normalAxis.z = 1
     sinv = ti.Vector.cross(AscendingAxis, X).dot(normalAxis)
     cosv = AscendingAxis.dot(X)
-    v = ti.math.atan2(sinv, cosv)  # 天体与参考轴的夹角
+    v = ti.math.atan2(sinv, cosv)
     w = v - θ  # 近地点与参考轴的夹角
 
     if (i == 0):
@@ -261,7 +261,8 @@ def vector_to_params(X: vec3, V: vec3, cM: ti.f32, time: ti.f32):
     else:
         W = ti.math.atan2(AscendingAxis.y, AscendingAxis.x)
 
-    rotation4 = ti.math.rotation3d(0.0, 0.0, W)@ti.math.rotation3d(i, 0.0, 0.0)@ti.math.rotation3d(0.0, 0.0, w)
+    rotation4 = ti.math.rotation3d(
+        0.0, 0.0, W)@ti.math.rotation3d(i, 0.0, 0.0)@ti.math.rotation3d(0.0, 0.0, w)
     rotation = ti.math.mat3([[rotation4[0, 0], rotation4[0, 1], rotation4[0, 2]],
                              [rotation4[1, 0], rotation4[1, 1], rotation4[1, 2]],
                              [rotation4[2, 0], rotation4[2, 1], rotation4[2, 2]]])
@@ -271,8 +272,8 @@ def vector_to_params(X: vec3, V: vec3, cM: ti.f32, time: ti.f32):
 # 0: Sun
 # EllipticObjetcCount = 0
 # HyperbolicObjetcCount = 0
-# EllipticField = ti.field(dtype=Orbit, shape=object_count)
-# HyperbolicField = ti.field(dtype=Orbit, shape=object_count)
+# EllipticField = ti.field(dtype=Orbit, shape=field_end[2])
+# HyperbolicField = ti.field(dtype=Orbit, shape=field_end[2])
 
 @ti.dataclass
 class Orbit:
@@ -297,6 +298,7 @@ class ObjectVector:
     massiveFlag: ti.i32
     center: ti.i32
 
+
 @ti.dataclass
 class VectorLerp:
     X1: vec3
@@ -306,127 +308,194 @@ class VectorLerp:
     t0: ti.f32
     t1: ti.f32
 
-@ti.data_oriented
-class Universe:
-    def __init__(self, count):
-        self.object_count = count
 
-        self.OrbitField = Orbit.field(shape=count)
-        self.VectorField = ObjectVector.field(shape=count)
+     
+capacity = 100000
+MassiveIndex = ti.field(dtype=ti.i32, shape=capacity)
+field_end = ti.field(dtype=ti.i32, shape=3)
+orbit_field = Orbit.field(shape=capacity)
+vector_field = ObjectVector.field(shape=capacity)
 
-    @ti.kernel
-    def initialize(self):
-        for i in range(self.object_count):
-            self.VectorField[i] = ObjectVector(
-                vec3(ti.randn(), ti.randn(), ti.randn()),
-                vec3(ti.randn(), ti.randn(), ti.randn()),
-                m=1, r=1, massiveFlag=0, center=0)
-        self.VectorField[0].X = vec3(0, 0, 0)
-        self.VectorField[0].V = vec3(0, 0, 0)
-        self.VectorField[0].massiveFlag = 1
-        self.VectorField[0].m = 10
-        self.VectorField[0].r = 10
 
-    @ti.kernel
-    def update_object_params(self, begin: ti.i32, end: ti.i32, time: ti.f32):
-        for i in range(begin, end):
-            vecs = self.VectorField[i]
-            self.OrbitField[i] = vector_to_params(
-                vecs.X, vecs.V, self.VectorField[vecs.center].m, time)
+@ti.func
+def field_swap(_from, _to):
+    orbit_field[_from], orbit_field[_to] = orbit_field[_to], orbit_field[_from]
+    vector_field[_from], vector_field[_to] = vector_field[_to], vector_field[_from]
 
-    @ti.kernel
-    def update_object_vectors(self, begin: ti.i32, end: ti.i32, time: ti.f32):
-        of = ti.static(self.OrbitField)
-        vf = ti.static(self.VectorField)
-        for i in range(begin, end):
-            of[i].t = time - of[i].t0
-            orbit = of[i]
-            if (of[i].e <= 1):
-                vf[i].X, vf[i].V = elliptic_params_to_vector(
-                    a=orbit.a, e=orbit.e, rotation=orbit.rotation, n=orbit.n, t=orbit.t, cM=orbit.M)
-            else:
-                vf[i].X, vf[i].V = hyperbolic_params_to_vector(
-                    a=orbit.a, e=orbit.e, rotation=orbit.rotation, n=orbit.n, t=orbit.t, cM=orbit.M)
 
-    @ti.kernel
-    def dynamic_update(self, begin: ti.i32, end: ti.i32,dt: ti.f32):
-        vf = ti.static(self.VectorField)
-        for i in range(begin, end):
-            cv = vf[vf[i].center]
-            r = vf[i].X-cv.X
-            a = -cv.m*G/(r.norm_sqr()) * r.normalized()
-            vf[i].V += a*dt
-            vf[i].X += vf[i].V * dt
+@ti.func
+def static_add() -> ti.i32:
+    field_swap(field_end[1], field_end[2])
+    field_swap(field_end[0], field_end[1])
+    field_end[0] = field_end[0] + 1
+    field_end[1] = field_end[1] + 1
+    field_end[2] = field_end[2] + 1
+    return field_end[0]-1
+
+
+@ti.func
+def ellicptic_add() -> ti.i32:
+    field_swap(field_end[1], field_end[2])
+    field_end[1] = field_end[1] + 1
+    field_end[2] = field_end[2] + 1
+    return field_end[1]-1
+
+
+@ti.func
+def hyperbolic_add() -> ti.i32:
+    field_end[2] = field_end[2] + 1
+    return field_end[2]-1
+
+
+@ti.func
+def ellicptic_swap(h_index: ti.i32):
+    field_swap(h_index, field_end[1])
+    field_end[1] = field_end[1] + 1
+
+
+@ti.func
+def hyperbolic_swap(e_index: ti.i32):
+    field_end[1] = field_end[1] - 1
+    field_swap(e_index, field_end[1])
+
+
+@ti.kernel
+def initialize(count: ti.i32):
+    for i in range(count):
+        vector_field[i] = ObjectVector(
+            vec3(ti.randn(), ti.randn(), ti.randn()).normalized()*2,
+            vec3(ti.randn(), ti.randn(), ti.randn()).normalized()*2,
+            m=1, r=1, massiveFlag=0, center=0)
+    static_index = static_add()
+    MassiveIndex[static_index] = 0
+    vector_field[static_index].X = vec3(0, 0, 0)
+    vector_field[static_index].V = vec3(0, 0, 0)
+    vector_field[static_index].massiveFlag = 1
+    vector_field[static_index].m = 10
+    vector_field[static_index].r = 10
+    ti.loop_config(serialize=True)
+    for i in range(field_end[0], count):
+        vecs = vector_field[field_end[2]]
+        orbit = vector_to_params(
+            vecs.X, vecs.V, vector_field[vecs.center].m, 0.0)
+        if (orbit.e <= 1):
+            orbit_field[ellicptic_add()] = orbit
+        elif (orbit.e > 1):
+            orbit_field[hyperbolic_add()] = orbit
+
+
+@ti.kernel
+def update_object_params(begin: ti.i32, end: ti.i32, time: ti.f32):
+    for i in range(begin, end):
+        vecs = vector_field[i]
+        orbit_field[i] = vector_to_params(
+            vecs.X, vecs.V, vector_field[vecs.center].m, time)
+        if (orbit_field[i].e <= 1 and i >= field_end[1]):
+            ellicptic_swap(i)
+        elif (orbit_field[i].e > 1 and i < field_end[1]):
+            hyperbolic_swap(i)
+
+
+@ti.kernel
+def update_object_vectors(time: ti.f32):
+
+    for i in range(field_end[0], field_end[1]):
+        orb = orbit_field[i]
+        orb.t = time - orb.t0
+        vector_field[i].X, vector_field[i].V = elliptic_params_to_vector(
+            a=orb.a, e=orb.e, rotation=orb.rotation, n=orb.n, t=orb.t, cM=orb.M)
+        
+    for i in range(field_end[1], field_end[2]):
+        orb = orbit_field[i]
+        orb.t = time - orb.t0
+        vector_field[i].X, vector_field[i].V = hyperbolic_params_to_vector(
+            a=orb.a, e=orb.e, rotation=orb.rotation, n=orb.n, t=orb.t, cM=orb.M)
+
+
+@ti.kernel
+def dynamic_update(begin: ti.i32, end: ti.i32, dt: ti.f32):
+    vf = ti.static(vector_field)
+    for i in range(begin, end):
+        cv = vf[vf[i].center]
+        r = vf[i].X-cv.X
+        a = -cv.m*G/(r.norm_sqr()) * r.normalized()
+        vf[i].V += a*dt
+        vf[i].X += vf[i].V * dt
+
+
+@ti.kernel
+def add_test():
+    static_add()
 
 
 delta_time = 0.001
+time_scale:float = 1.0
 simulate_time = 0
 
-U = Universe(1000)
-U.initialize()
-U.update_object_params(0, U.object_count, simulate_time)
-U.update_object_vectors(1, U.object_count, simulate_time)
-# @ti.kernel
-# def update(time: ti.f32, delta_time: ti.f32):
-#     for i in range(EllipticObjetcCount):
-#         EllipticField[i].t += delta_time
-#         [x, v] = elliptic_params_to_vector(EllipticField[i])
-#         OvjectField[i].x = x
-#         OvjectField[i].v = v
-#     for i in range(HyperbolicObjetcCount):
-#         HyperbolicField[i].t += delta_time
-#         [x, v] = hyperbolic_params_to_vector(HyperbolicField[i])
-#         OvjectField[i].x = x
-#         OvjectField[i].v = v
+initialize(10000)
+update_object_params(field_end[0], field_end[2], simulate_time)
 
 
 # gui framework
-window = ti.ui.Window("Taichi Gravity", (1024, 1024), vsync=True)
+window = ti.ui.Window("Restricted Gravity", (1024, 1024), vsync=True)
 canvas = window.get_canvas()
 canvas.set_background_color((0, 0, 0))
 scene = ti.ui.Scene()
 camera = ti.ui.Camera()
-camera.position(0.0,0.0, 10)
+camera.position(0.0, 0.0, 10)
 camera.lookat(0.0, 0.0, 0)
 
 distance = 10.0
-def camera_update(window,dt):
+
+
+def camera_update(window, dt):
     global distance
-    camera.position(0.0,distance, 1)
+    camera.position(0.0, distance, 1)
     camera.lookat(0.0, 0.0, 0.0)
-    if(window.is_pressed(' ')):
+    if (window.is_pressed(' ')):
         distance = 10.0
-    if(window.is_pressed('w')):
+    if (window.is_pressed('w')):
         distance -= 100*delta_time
-    if(window.is_pressed('s')):
+    if (window.is_pressed('s')):
         distance += 100*delta_time
+
 
 while window.running:
     # physics
-    simulate_time += delta_time
-    U.update_object_vectors(1, U.object_count, simulate_time)
+    simulate_time += delta_time*time_scale
+    if (window.is_pressed('x')):
+        time_scale *= 1.01
+    if (window.is_pressed('z')):
+        time_scale *= 0.99
+    gui = window.get_gui()
+    with gui.sub_window("name", 0, 0, 0.5, 0.3):
+        gui.text('w and s to zoom')
+        gui.text('space to reset zoom')
+        gui.text('x and z to change time scale')
+        gui.text(f'time_scale:{time_scale}')
+    update_object_vectors(simulate_time)
     # for i in range(10):
-    #     U.dynamic_update(1,U.object_count,delta_time/10)
+    #       U.dynamic_update(1,U.field_end[2],delta_time/10)
     # camera
     # camera.position(0.0,0.0, 10)
-    
-    camera_update(window,delta_time)
+    camera_update(window, delta_time)
     scene.set_camera(camera)
 
     # render
-    scene.point_light(pos=(0, 1, 2), color=(1, 1, 1))
+    scene.point_light(pos=(0, 0, 0), color=(1, 1, 1))
     scene.ambient_light((0.5, 0.5, 0.5))
     # object render
-    scene.particles(centers=U.VectorField.X, radius=0.005, color=(1, 1, 1))
+    scene.particles(centers=vector_field.X, radius=0.005, color=(1, 1, 1))
 
     # gui = window.get_gui()
     # with gui.sub_window("name", 0, 0, 0.5, 0.3):
     #     gui.text(content=f'X: {U.VectorField[0].X.x}')
-        # new_color = gui.color_edit_3("name", old_color)
-    # print(U.VectorField[0].X)
-    # print(U.VectorField[1].X)
-    of1 = U.OrbitField[10]
-    # print('a: ',of1.a,'e: ',of1.e,'i: ',of1.i,'w: ',of1.w,'W: ',of1.W,'n: ',of1.n,'t: ',of1.t,'t0: ',of1.t0,'M: ',of1.M)
-    # print(of1.rotation)
+    # new_color = gui.color_edit_3("name", old_color)
+
+    # of1 = orbit_field[10]
+    # print('a: ', of1.a, 'e: ', of1.e, 'i: ', of1.i, 'w: ', of1.w, 'W: ',
+    #       of1.W, 'n: ', of1.n, 't: ', of1.t, 't0: ', of1.t0, 'M: ', of1.M)
+    # print(vector_field[10].X)
+    # print("field_end[0]: ", field_end[0], "field_end[1]: ", field_end[1],"field_end[2]: ", field_end[2])
     canvas.scene(scene)
     window.show()
