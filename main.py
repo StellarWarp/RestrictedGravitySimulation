@@ -28,7 +28,7 @@ def m_acosh(x: ti.f32):
     return ti.log(x + ti.sqrt(x * x - 1))
 
 
-kepler_solver_iterations = 10
+kepler_solver_iterations = 5
 
 # kepler solver
 
@@ -247,7 +247,6 @@ def vector_to_params(X: vec3, V: vec3, cM: ti.f32, time: ti.f32):
     # not sinv but sinv*X*A
     normalAxis = L.normalized()
     if (normalAxis.x == 0 and normalAxis.y == 0 and normalAxis.z == 0):
-
         normalAxis.x = 0
         normalAxis.y = 0
         normalAxis.z = 1
@@ -263,9 +262,7 @@ def vector_to_params(X: vec3, V: vec3, cM: ti.f32, time: ti.f32):
 
     rotation4 = ti.math.rotation3d(
         0.0, 0.0, W)@ti.math.rotation3d(i, 0.0, 0.0)@ti.math.rotation3d(0.0, 0.0, w)
-    rotation = ti.math.mat3([[rotation4[0, 0], rotation4[0, 1], rotation4[0, 2]],
-                             [rotation4[1, 0], rotation4[1, 1], rotation4[1, 2]],
-                             [rotation4[2, 0], rotation4[2, 1], rotation4[2, 2]]])
+    rotation = rotation4[0:3,0:3]
     return Orbit(a, e, i, w, W, n, t, t0, cM, rotation)
 
 
@@ -364,7 +361,7 @@ def initialize(count: ti.i32):
     for i in range(count):
         vector_field[i] = ObjectVector(
             vec3(ti.randn(), ti.randn(), ti.randn()).normalized()*2,
-            vec3(ti.randn(), ti.randn(), ti.randn()).normalized()*2,
+            vec3(ti.randn(), ti.randn(), ti.randn())*2.0,
             m=1, r=1, massiveFlag=0, center=0)
     static_index = static_add()
     MassiveIndex[static_index] = 0
@@ -473,6 +470,7 @@ while window.running:
         gui.text('space to reset zoom')
         gui.text('x and z to change time scale')
         gui.text(f'time_scale:{time_scale}')
+        gui.text(f'static:{field_end[0]} ellicptic:{field_end[1]-field_end[0]} hyperbolic:{field_end[2]-field_end[1]}')
     update_object_vectors(simulate_time)
     # for i in range(10):
     #       U.dynamic_update(1,U.field_end[2],delta_time/10)
@@ -485,8 +483,7 @@ while window.running:
     scene.point_light(pos=(0, 0, 0), color=(1, 1, 1))
     scene.ambient_light((0.5, 0.5, 0.5))
     # object render
-    scene.particles(centers=vector_field.X, radius=0.005, color=(1, 1, 1))
-
+    scene.particles(centers=vector_field.X, radius=0.005, per_vertex_color=vector_field.V)
     # gui = window.get_gui()
     # with gui.sub_window("name", 0, 0, 0.5, 0.3):
     #     gui.text(content=f'X: {U.VectorField[0].X.x}')
