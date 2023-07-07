@@ -2,7 +2,7 @@
 
 ![image-20230707173234518](https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20230707173234518.png)
 
-[为更好的阅读体验在此阅读](https://stellarwarp.github.io/posts/OrbitEquation/)
+## [为更好的阅读体验在此阅读](https://stellarwarp.github.io/posts/OrbitEquation/)
 
 # 介绍
 
