@@ -1,3 +1,7 @@
+# RestrictedGravitySimulation
+
+![image-20230707173234518](https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20230707173234518.png)
+
 # 介绍
 
 考虑大部分物体都是小质量物体的情形（类似于稳定的恒星系统），在多体模拟中，可以将整个系统划分成多个引力区域，通过二体问题的求解来模拟物体运动。
@@ -42,13 +46,13 @@ https://github.com/StellarWarp/RestrictedGravitySimulation
 
 为了能与不同的天体产生互动，同时仍不引入多体引力，整个引力系统被划分为多个引力范围。比如一个恒星与一个行星，物体以最小的引力范围为中心环行。
 
-<img src="https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20221128203120111.png" alt="image-20221128203120111" style="zoom: 33%;" />
+<img src="https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20221128203120111.png" alt="image-20221128203120111" height=300 />
 
 如何定义引力范围的大小？一般来说，当中心天体对物体的摄动大于其卫星时，可以认为卫星的引力已经可以被忽略
 
 卫星轨道偏心率为0的情形下，引力范围（Sphere Of Influence）可以使用如下的公式计算
 
-<img src="https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/%E9%A1%B5%E9%9D%A2%201%20(6).png" alt="页面 1 (6)" style="zoom: 33%;" />
+<img src="https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/%E9%A1%B5%E9%9D%A2%201%20(6).png" alt="页面 1 (6)" height=300 />
 
 $$
 r_{SOI}=R(\frac{m_p}{m_s})^{2/5}
@@ -94,11 +98,10 @@ $$
 
 快速回顾一下椭圆与双曲线的几何性质
 
-
-<img src="https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20230625103821640.png" alt="image-20230625103821640" style="zoom: 50%;" />
-
-<img src="https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20230625104500902.png" alt="image-20230625104500902" style="zoom: 80%;" />
-
+<figure>
+<img src="https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20230625103821640.png" alt="image-20230625103821640" height=300 />
+<img src="https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20230625104500902.png" alt="image-20230625104500902" height=300 />
+<figure>
 
 
 在椭圆中有
@@ -182,7 +185,7 @@ $$
 r = \frac{a(1-e^2)}{1+e\cos \upsilon}
 $$
 
-<img src="https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20230625110417059.png" alt="image-20230625110417059" style="zoom: 50%;" />
+<img src="https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20230625110417059.png" alt="image-20230625110417059" height=300 />
 
 现在将 $E$ 转化为 $\upsilon$
 
