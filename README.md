@@ -1,4 +1,4 @@
-# RestrictedGravitySimulation
+# Restricted Gravity Simulation
 
 ![image-20230707173234518](https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20230707173234518.png)
 
