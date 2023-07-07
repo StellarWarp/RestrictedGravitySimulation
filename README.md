@@ -2,6 +2,8 @@
 
 ![image-20230707173234518](https://cdn.jsdelivr.net/gh/StellarWarp/StellarWarp.github.io@main/img/image-20230707173234518.png)
 
+[为更好的阅读体验在此阅读](https://stellarwarp.github.io/posts/OrbitEquation/)
+
 # 介绍
 
 考虑大部分物体都是小质量物体的情形（类似于稳定的恒星系统），在多体模拟中，可以将整个系统划分成多个引力区域，通过二体问题的求解来模拟物体运动。
